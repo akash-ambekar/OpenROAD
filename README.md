@@ -1,325 +1,197 @@
-# OpenROAD
+# 7nm-PHYSICAL-DESIGN-CONTEST-USING-OPENROAD
+This repository gives brief review of PPA Improvement by Physical Design of RISC-V processor core using 7nm ASAP7 PDK. For this contest, the verilog code is provided and using OpenRoad EDA tool, we have performed RTLtoGDSII flow and improved the design PPA (Power, Performance, Area)
 
-[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
+![image](https://user-images.githubusercontent.com/100372947/228320761-19c35794-58bf-4d11-a124-4978eca0c164.png)
 
-OpenROAD is an integrated chip physical design tool that takes a
-design from synthesized Verilog to routed layout.
+# Contents
 
-An outline of steps used to build a chip using OpenROAD is shown below:
+- [OpenROAD EDA Tool](#openroad-eda-tool)
+- [Proposed Work and Initial Design Constraints](#proposed-work-and-initial-design-constraints)
+- [Proposed Methods to Improve fmax ](#proposed-methods-to-improve-fmax)
+- [Final Layout](#final-layout)
+- [Results and Achievements](#results-and-achievements)
+- [Acknowledgements](#acknowledgements)
+- [References](#references)
+- [Author Contact Details](author-contact-details)
 
-* Initialize floorplan - define the chip size and cell rows
-* Place pins (for designs without pads )
-* Place macro cells (RAMs, embedded macros)
-* Insert substrate tap cells
-* Insert power distribution network
-* Macro Placement of macro cells
-* Global placement of standard cells
-* Repair max slew, max capacitance, and max fanout violations and long wires
-* Clock tree synthesis
-* Optimize setup/hold timing
-* Insert fill cells
-* Global routing (route guides for detailed routing)
-* Antenna repair
-* Detailed routing
-* Parasitic extraction
-* Static timing analysis
+
+# OpenROAD EDA Tool
+OpenROAD is an integrated chip physical design tool that takes a design from synthesized Verilog to routed layout.
+
+• An outline of steps used to build a chip using OpenROAD is shown below:
+
+• Initialize floorplan - define the chip size and cell rows
+
+• Place pins (for designs without pads )
+
+• Place macro cells (RAMs, embedded macros)
+
+• Insert substrate tap cells
+
+• Insert power distribution network
+
+• Macro Placement of macro cells
+
+• Global placement of standard cells
+
+• Repair max slew, max capacitance, and max fanout violations and long wires
+
+• Clock tree synthesis
+
+• Optimize setup/hold timing
+
+• Insert fill cells
+
+• Global routing (route guides for detailed routing)
+
+• Antenna repair
+
+• Detailed routing
+
+• Parasitic extraction
+
+• Static timing analysis
 
 OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
 
-Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
+ORFS Documentation & Installation Guide : https://openroad.readthedocs.io/en/latest/main/README.html
 
-## Getting Started with OpenROAD
 
-[OpenROAD](https://theopenroadproject.org/) is the leading
-open-source, foundational application for semiconductor digital design.
-It eliminates the barriers of cost, risk and uncertainty in hardware
-design to foster open access, expertise, rapid innovation, and faster
-design turnaround. The OpenROAD application enables flexible flow
-control through an API with bindings in Tcl and Python.
 
-OpenROAD is a foundational building block in open-source digital flows like
-[OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
-[OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
-[Efabless](https://efabless.com/), Silicon Compiler Systems; as
-well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
-mixed-signal design flows.
+# Proposed Work and Initial Design Constraints
 
-OpenROAD users span hardware designers, industry collaborators,
-enthusiasts, academics, and researchers.
+In this contest, we have been provided with a verilog code for RISC-V processor core (Code Link : https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/designs/src/ibex) and we are expected to run the RTLtoGDSII flow for given design and improve the PPA with respect to any one parameter. Considering the code, we have decided to improve the performance of the design by improving fmax of design.
 
-Two main flow controllers are supported by the
-[OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD)
-project repository:
+The initial design constraints are given as follows :
 
--   [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) -
-     Supported by the OpenROAD project
+              ⇒   Minimum Clock Period      :   1760 ps
+              ⇒   Maximum Clock Frequency   :   568.18 MHz
+              ⇒   Core Utilization          :   45%
+              ⇒   Design Area               :   2490 u^2
+              ⇒   Power                     :   12.1 mW
+              
+              
+              
+              
+# Proposed Methods to Improve fmax 
 
--   [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) -
-     Supported by [Efabless](https://efabless.com/)
+  1) Modification in Clock Constraints 
+  2) Improving Core Utilization\
+  3) Replacing RVT Cells by LVT Cells & using FF Library
+  4) Modification of Supply Voltage
+  5) Modification of RC Parasitics File
+  6) Increasing Metal Layer for Routing
+  7) Modification in Placement Density
+  8) Modification in CTS Buffer Distance
+  
+# 1) Modification in Clock Constraints 
 
-The OpenROAD flow delivers an autonomous, no-human-in-the-loop, 24 hour
-turnaround from RTL to GDSII for design exploration and physical design
-implementation.
+File Location : ./flow/designs/asap7/ibex/constraints.sdc
 
-![rtl2gds.webp](./docs/images/rtl2gds.webp)
+As clock period is proportional to 1/fmax, reducing the clock frequency will result into enhanced fmax. But while doing so, one must take care that it should not cause any unrepairable setup violations when clock period is extremely reduced. We followed a step by step reduction and ended with best results at clock period = 850ps along with reducing clock to io delay to 0.01
 
-### GUI
+![image](https://user-images.githubusercontent.com/100372947/228129497-7155a193-8138-4710-934a-1cd5939894ea.png)
 
-The OpenROAD GUI is a powerful visualization, analysis, and debugging
-tool with a customizable Tcl interface. The below figures show GUI views for
-various flow stages including post-routed timing, placement congestion, and
-CTS.
+# 2) Improving Core Utilization
 
-![ibexGui.webp](./docs/images/ibexGui.webp)
+File Location : ./flow/designs/asap7/ibex/config.mk
 
-### Placement Congestion View:
+Core utilization indicates the amount of core area used for cell placement (in %). While improving the core utilization we have taken care that, high core utilization must not create NP routing difficulty. Hence, we tuned the core utilization within the range of 40 to 60 and iterated the design to get best results.
 
-![pl_congestion.webp](./docs/images/pl_congestion.webp)
+# 3) Replacing RVT Cells by LVT Cell & using FF Library
 
-### CTS:
+File Location : ./flow/platforms/asap7/config.mk
 
-![clk_routing.webp](./docs/images/clk_routing.webp)
+During synthesis, we are provided with various options to use Slow-Slow/Fast-Fast library & RVT/LVT/SLVT library cells. Considering improving fmax as utmost goal, we used FF library & replaced all RVT cells by LVT cells. LVT cells have lower threshold voltage which results into high current comparing with RVT cells having high threshold. Due to large current, faster switching will be achieved which results into improvement of fmax. No doubt LVT cells may cause higher leakage power than RVT but no significant changes in power have been observed after replacement.
 
-### PDK Support
+![image](https://user-images.githubusercontent.com/100372947/228182826-bb63eb6e-742d-4b11-a2bb-d10cee2d064f.png)
 
-The OpenROAD application is PDK independent. However, it has been tested
-and validated with specific PDKs in the context of various flow
-controllers.
+# 4) Modification of Supply Voltage
 
-OpenLane supports Skywater130.
+File Location : ./flow/platforms/asap7/config.mk
 
-OpenROAD-flow-scripts supports several public and private PDKs
-including:
+The supply voltage is provied in 3 formats namely Best, Typical & Worst. Initially it was 0.77/0.7/0.63 V i.e. +-10% tolerance band. But if we increase the supply voltage, drain current will rise and results in faster switching which ultimately improve fmax. Considering this, we increased value of supply voltage 1.3/1
+27/1.2 V (Best/Typical/Worst) and observed the improvements.
 
-#### Open-Source PDKs
+![image](https://user-images.githubusercontent.com/100372947/228216576-5d552642-9aac-4635-9b4e-75b9836edfcd.png)
 
--   `GF180` - 180nm
--   `Skywater130` - 130nm
--   `Nangate45` - 45nm
--   `ASAP7` - Predictive FinFET 7nm
 
-#### Proprietary PDKs
+# 5) Modification of RC Parasitics File
 
-These PDKS are supported in OpenROAD-flow-scripts only. They are used to
-test and calibrate OpenROAD against commercial platforms and ensure good
-QoR. The PDKs and platform-specific files for these kits cannot be
-provided due to NDA restrictions. However, if you are able to access
-these platforms independently, you can create the necessary
-platform-specific files yourself.
+File Location : ./flow/platforms/asap7/setRC.tcl
 
--   `GF55` - 55nm
--   `GF12` - 12nm
--   `Intel22` - 22nm
--   `Intel16` - 16nm
--   `TSMC65` - 65nm
+Parasitics are the components that degrade the performance of the design. Generally the metal resistances & stray capacitances are the most dominant cause for this RC parasitics drop which causes larger delay. In order to reduce this delay, we reduce the metal & via resistances along with metal capacitances.
 
-## Tapeouts
 
-OpenROAD has been used for full physical implementation in over 240 tapeouts
-in Sky130 through the Google-sponsored, Efabless [MPW
-shuttle](https://efabless.com/open_shuttle_program) and
-[ChipIgnite](https://efabless.com/) programs.
+# 6) Increasing Metal Layer for Routing
 
-![shuttle.webp](./docs/images/shuttle.webp)
+File Location : ./flow/platforms/asap7/config.mk
 
-### OpenTitan SoC on GF12LP - Physical design and optimization using OpenROAD
+In initial config file, the max metal layer for routing is set to M7 where as upto M9 layers are provided in the PDK. So, increasing metal layers reduces the routing congestions.
 
-![OpenTitan_SoC.webp](./docs/images/OpenTitan_SoC.webp)
+![image](https://user-images.githubusercontent.com/100372947/228185474-b25bd738-67bd-4fc0-b3cc-9a09d16e6ff0.png)
 
-### Continuous Tapeout Integration into CI
-
-The OpenROAD project actively adds successfully taped out MPW shuttle
-designs to the [CI regression
-testing](https://github.com/The-OpenROAD-Project/OpenLane-MPW-CI).
-Examples of designs include Open processor cores, RISC-V based SoCs,
-cryptocurrency miners, robotic app processors, amateur satellite radio
-transceivers, OpenPower-based Microwatt etc.
-
-## Install dependencies
-
-For a limited number of configurations, the following script can be used
-to install dependencies.  The script `etc/DependencyInstaller.sh` supports
-Centos7, Ubuntu 20.04, Ubuntu 22.04, RHEL 8, Debian 10 and Debian 11. To correctly install the dependencies with the
-script you need to run as root or prepend `sudo` to the commands below.
-
-``` shell
-./etc/DependencyInstaller.sh -help
-
-Usage: etc/DependencyInstaller.sh
-                                # Installs all of OpenROAD's dependencies no
-                                #     need to run -base or -common. Requires
-                                #     privileged access.
-                                #
-       etc/DependencyInstaller.sh -base
-                                # Installs OpenROAD's dependencies using
-                                #     package managers (-common must be
-                                #     executed in another command).
-       etc/DependencyInstaller.sh -common
-                                # Installs OpenROAD's common dependencies
-                                #     (-base must be executed in another
-                                #     command).
-       etc/DependencyInstaller.sh -prefix=DIR
-                                # Installs common dependencies in an existing
-                                #     user-specified directory. Only used
-                                #     with -common. This flag cannot be used
-                                #     with sudo or with root access.
-       etc/DependencyInstaller.sh -local
-                                # Installs common dependencies in
-                                #    "$HOME/.local". Only used with
-                                #    -common. This flag cannot be used with
-                                #    sudo or with root access.
-```
-
-## Build
-
-The first step, independent of the build method, is to download the repository:
-
-``` shell
-git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
-cd OpenROAD
-```
-
-OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`.
-
-The default build type is RELEASE to compile optimized code.
-The resulting executable is in `build/src/openroad`.
-
-Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show below.
-
-| Argument               | Value                     |
-|------------------------|---------------------------|
-| `CMAKE_BUILD_TYPE`     | DEBUG, RELEASE            |
-| `CMAKE_CXX_FLAGS`      | Additional compiler flags |
-| `TCL_LIBRARY`          | Path to Tcl library       |
-| `TCL_HEADER`           | Path to `tcl.h`           |
-| `ZLIB_ROOT`            | Path to `zlib`            |
-| `CMAKE_INSTALL_PREFIX` | Path to install binary    |
-| `GPU`                  | true, false               |
-
-> **Note:** There is a `openroad_build.log` file that is generated with every build in the build directory. In case of filing issues, it can be uploaded in the "Relevant log output" section of OpenROAD [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
-
-### Build by hand
-
-``` shell
-mkdir build
-cd build
-cmake ..
-make
-```
-
-The default install directory is `/usr/local`.
-To install in a different directory with CMake use:
-
-``` shell
-cmake .. -DCMAKE_INSTALL_PREFIX=<prefix_path>
-```
-
-Alternatively, you can use the `DESTDIR` variable with make.
-
-``` shell
-make DESTDIR=<prefix_path> install
-```
-
-### Build using support script
-
-``` shell
-./etc/Build.sh
-# To build with debug option enabled and if the Tcl library is not on the default path
-./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
-```
-
-The default install directory is `/usr/local`.
-To install in a different directory use:
-
-``` shell
-./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
-```
-
-### LTO Options
-By default, OpenROAD is built with link time optimizations enabled. This adds
-about 1 minute to compile times and improves the runtime by about 11%. If
-you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
-generating a build.
-
-### GPU acceleration
-The default solver for initial placement is single threaded. If you would like
-to enable GPU and use the CUDA solver, set `-DGPU=true` at cmake time.
-
-Also, remember to install CUDA Toolkit and proper driver manually. See https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
-
-## Regression Tests
-
-There are a set of regression tests in `test/`.
-
-``` shell
-# run all tool unit tests
-test/regression
-# run all flow tests
-test/regression flow
-# run <tool> tests
-test/regression <tool>
-# run <tool> tool tests
-src/<tool>/test/regression
-```
-
-The flow tests check results such as worst slack against reference values.
-Use `report_flow_metrics [test]...` to see all of the metrics.
-Use `save_flow_metrics [test]...` to add margins to the metrics and save them to <test>.metrics_limits.
-
-``` text
-% report_flow_metrics gcd_nangate45
-                       insts    area util slack_min slack_max  tns_max clk_skew max_slew max_cap max_fanout DPL ANT drv
-gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004        0       0          0   0   0   0
-```
-
-## Run
-
-``` text
-openroad [-help] [-version] [-no_init] [-exit] [-gui]
-         [-threads count|max] [-log file_name] cmd_file
-  -help              show help and exit
-  -version           show version and exit
-  -no_init           do not read .openroad init file
-  -threads count|max use count threads
-  -no_splash         do not show the license splash at startup
-  -exit              exit after reading cmd_file
-  -gui               start in gui mode
-  -python            start with python interpreter [limited to db operations]
-  -log <file_name>   write a log in <file_name>
-  cmd_file           source cmd_file
-```
-
-OpenROAD sources the Tcl command file `~/.openroad` unless the command
-line option `-no_init` is specified.
-
-OpenROAD then sources the command file `cmd_file` if it is specified on
-the command line. Unless the `-exit` command line flag is specified, it
-enters an interactive Tcl command interpreter.
-
-Below is a list of the available tools/modules included in the OpenROAD app:
-
-| Tool | Purpose |
-|-|-|
-| [OpenROAD](./src/README.md) | OpenROAD (global commands) |
-| [OpenDB](./src/odb/README.md) | Database |
-| [OpenRCX](./src/rcx/README.md) | Parasitics extraction |
-| [Restructure](./src/rmp/README.md) | Synthesis |
-| [Floorplan](./src/ifp/README.md) | Initialize floorplan |
-| [ioPlacer](./src/ppl/README.md) | Pin placement |
-| [ICeWall](./src/pad/README.md) | Chip-level connections |
-| [TritonMacroPlacer](./src/mpl/README.md) | Macro placement |
-| [Tapcell](./src/tap/README.md) | Tapcell insertion |
-| [PDN](./src/pdn/README.md), [PDNSim](./src/psm/README.md) | PDN analysis |
-| [RePlAce](./src/gpl/README.md) | Global placement |
-| [OpenSTA](src/sta/README.md) | Timing analysis |
-| [Resizer](./src/rsz/README.md) | Gate resizer |
-| [OpenDP](./src/dpl/README.md) | Detailed placement |
-| [TritonCTS 2.0](./src/cts/README.md) | Clock tree synthesis |
-| [FastRoute](./src/grt/README.md), [Antenna Checker](./src/ant/README.md) | Global routing |
-| [TritonRoute](./src/drt/README.md) | Detailed routing |
-| [Metal Fill](./src/fin/README.md) | Metal fill |
-| [GUI](./src/gui/README.md) | Graphical user interface |
-
-## License
-
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+# 7) Modification in Placement Density
+
+File Location : ./flow/platforms/asap7/config.mk
+
+Placement density is the utilization of the cells in your design. In practical, the equation is the placement density should be less than 70%. so that remaining 30% can be utilized for routing. We have tuned the placement density in range of 50% to 65% and found best results at 55% placement density
+
+# 8) Modification in CTS Buffer Distance
+
+File Location : ./flow/platforms/asap7/config.mk
+
+While doing CTS, the tool periodically insert buffers to avoid degradation of signal but inserting multiple buffers at very small distances will result into unnecessary rise in overall latency. To avoid this, we finely tuned and increased the CTS Buffer Distance.
+
+# Final Layout
+
+![image](https://user-images.githubusercontent.com/100372947/228250952-3a71721b-d7d1-4e80-9312-049f152e24ec.png)
+
+# Clock Tree
+
+![Screenshot (87)](https://user-images.githubusercontent.com/100372947/228317757-abf9e95a-1b53-4691-b34e-2dda3e6a61f9.png)
+
+# DRC 
+
+As the OpenROAD tool itself iterate the design routing unless all DRC violations gets removed, the design ensures 0 DRC violations
+
+# Results and Achievements
+
+![image](https://user-images.githubusercontent.com/100372947/228320811-a0426bab-5ec5-4051-8ce8-c03e8b342289.png)
+
+![image](https://user-images.githubusercontent.com/100372947/228317683-f4211932-5c46-4728-b044-ddfee0050a98.png)
+
+![image](https://user-images.githubusercontent.com/100372947/228423203-2a56fca8-8947-49eb-b1e1-98de22cfd472.png)
+
+
+The biggest achievement of the design is to run the design at maximum operating frequency of 1.17GHz. Along with it, there is a slight improvement in design area along with core utilization. Due to trade off, we see the enhancement in power which can be reduced by further modifications.
+
+The final modified design constraints are given as follows :
+
+              ⇒   Minimum Clock Period      :   850 ps
+              ⇒   Maximum Clock Frequency   :   1.176 GHz
+              ⇒   Core Utilization          :   55%
+              ⇒   Design Area               :   2417 u^2
+              ⇒   Power                     :   32.3 mW
+              
+
+# Acknowledgements
+
+1.	Kunal Ghosh (Co-Founder, VLSI System Design Pvt. Ltd.)
+
+2.	Dr. Hemanta Kumar Mondal (Professor, Dept. of ECE, NIT Durgapur)	
+	
+3.	Sumanto Kar (Sr. Project Technical Assistant, IIT Bombay)
+
+4.  	Vijayan Krishnan
+
+
+# References 
+
+OpenROAD Flow Scripts & Documentation : https://openroad.readthedocs.io/en/latest/main/README.html
+
+# Author Contact Details
+
+Akash Ambekar
+
+Mail : akashambekar6955@gmail.com
